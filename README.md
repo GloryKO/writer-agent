@@ -17,13 +17,14 @@ User query --> Researcher --[search loop]--> Writer --> Final report
 
 ```
 writer-agent/
-├── config.py          # Environment variables and settings
+├── config.py          # Environment variables, structlog setup, settings
 ├── state.py           # AgentState definition (shared graph state)
-├── tools.py           # Tool definitions (search_web) and ToolNode
+├── tools.py           # Tool definitions (search_web) with retry logic
 ├── agents.py          # LLM setup, researcher and writer node functions
 ├── graph.py           # Graph construction, routing logic, compilation
-├── main.py            # CLI entry point
+├── main.py            # Interactive CLI entry point
 ├── requirements.txt   # Python dependencies
+├── output/            # Generated reports (git-ignored)
 └── .env               # API keys (not committed to version control)
 ```
 
@@ -66,15 +67,34 @@ writer-agent/
 
 ## Usage
 
-Run the agent from the command line:
+Run the interactive CLI:
 
 ```bash
 python3 main.py
 ```
 
-By default it asks: *"What are the latest developments in AI agents in 2025?"*
+You'll be prompted to enter research queries. The agent will search the web, compile findings, and produce a written report. Type `quit`, `exit`, or `q` to stop.
 
-To change the query, edit the message in `main.py` or import the compiled app in your own script:
+```
+Writer Agent — Interactive CLI
+Type your research query, or 'quit' / 'exit' to stop.
+
+📝 Query: What are the latest developments in AI agents?
+
+🔍 Researching: What are the latest developments in AI agents?
+
+=== Final Answer ===
+...
+
+💾 Saved to output/what_are_the_latest_developments_in_ai_agents_20260330_223000.txt
+
+📝 Query: quit
+Goodbye!
+```
+
+Conversation memory is maintained within a session — follow-up questions can reference earlier answers.
+
+You can also use the compiled app programmatically:
 
 ```python
 from graph import app
@@ -89,18 +109,16 @@ result = app.invoke(
 print(result["messages"][-1].content)
 ```
 
-The `thread_id` in the config enables conversation memory — use the same ID to continue a conversation across multiple invocations.
-
 ## Module Reference
 
 | Module | Purpose |
 |-----------|----------------------------------------------|
-| `config.py` | Loads `.env`, exports API keys and `MODEL_NAME` |
+| `config.py` | Loads `.env`, sets up structlog, exports API keys, `MODEL_NAME`, and `OUTPUT_DIR` |
 | `state.py` | Defines `AgentState`, the shared state passed between nodes |
-| `tools.py` | Declares `search_web` tool and wraps it in a `ToolNode` |
+| `tools.py` | Declares `search_web` tool with retry logic and wraps it in a `ToolNode` |
 | `agents.py` | Initialises the LLM and defines the researcher/writer node functions |
 | `graph.py` | Builds the `StateGraph`, adds routing logic, compiles to a runnable `app` |
-| `main.py` | Entry point — invokes the app with a sample query |
+| `main.py` | Interactive CLI — loops queries, saves reports to `output/` |
 
 ## Customisation
 
@@ -111,4 +129,3 @@ The `thread_id` in the config enables conversation memory — use the same ID to
 ## License
 
 MIT
-# writer-agent

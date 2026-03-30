@@ -2,12 +2,15 @@
 
 from typing import Literal
 
+import structlog
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 
 from state import AgentState
 from tools import tool_node
 from agents import researcher_agent, writer_agent
+
+log = structlog.get_logger()
 
 
 # ── Routing ──────────────────────────────────────────────────────────────────
@@ -19,7 +22,9 @@ def should_use_tools(state: AgentState) -> Literal["tools", "writer"]:
     """
     last_message = state["messages"][-1]
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        log.info("routing", decision="tools")
         return "tools"
+    log.info("routing", decision="writer")
     return "writer"
 
 
@@ -54,6 +59,7 @@ def build_graph():
 
     # Compile with memory so threads retain context across turns
     memory = MemorySaver()
+    log.info("graph.compiled")
     return workflow.compile(checkpointer=memory)
 
 
